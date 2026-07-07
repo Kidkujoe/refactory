@@ -31,6 +31,18 @@ agent flags smells by name and offers the relevant fix, rather than waiting to b
 - **Learning loop** — a per-project `.refactory/learnings.md` lab notebook whose lessons are
   reloaded each session, with a deliberate approval gate before any lesson becomes a skill edit.
 
+## Diagrams
+
+**System architecture** — how the plugin plugs into Claude Code and keeps its state in your repo:
+
+![refactory system architecture](docs/architecture.png)
+
+**The refactoring workflow** — every change stays behavior-preserving: net first, small steps, revert on red, ledger at the end:
+
+![refactory workflow](docs/workflow.png)
+
+Both are editable — the `.drawio` sources are in [`docs/`](docs/).
+
 ## Install (via Claude Code plugin marketplace)
 
 1. Add this repository as a marketplace:
