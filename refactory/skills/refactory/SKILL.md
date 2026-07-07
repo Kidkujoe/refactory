@@ -406,10 +406,15 @@ the eventual HIGH-band PR will partly redo?) rather than defaulting to D.
 
 Record the answer in `guard.json`, e.g. `{"net": "accepted-risk", "decision": "B",
 "target": "app/.../page.tsx"}`. Set `net` to `green` (option A, once tests exist) or
-`accepted-risk` (option B) to unblock edits. Ask **once** per session; only re-ask if the target
-file changes. When `net` is `green`, also record the net-depth inventory (`surface`/`asserted`);
-at end of turn the Stop hook blocks finishing until the ledger + backlog + inventory close-out is
-complete — see `references/14-guarded-mode.md` for both.
+`accepted-risk` (option B) to unblock edits. **On option D (hybrid), also record the deferred
+HIGH band you are NOT touching**, e.g. `{"net": "green", "decision": "D", "deferred":
+["app/lib/optimistic-cache.ts", "app/state/**"]}` — so the recorded state is honest about what
+was left un-netted (the gate does not yet enforce this boundary; the field makes the deferral
+visible and is logged at close-out as evidence for whether D-style hybrids are common enough to
+justify enforcing scope later). Ask **once** per session; only re-ask if the target file changes.
+When `net` is `green`, also record the net-depth inventory (`surface`/`asserted`); at end of turn
+the Stop hook blocks finishing until the ledger + backlog + inventory close-out is complete —
+see `references/14-guarded-mode.md` for both.
 
 **Risk taxonomy** (use it to band smells in the audit, and to scope option D):
 - **HIGH** — state machines, optimistic mutations with rollback, write queues, async/timer

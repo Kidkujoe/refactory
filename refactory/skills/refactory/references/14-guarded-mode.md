@@ -19,6 +19,13 @@ Record the answer in `guard.json`, e.g. `{"net": "accepted-risk", "decision": "B
 A, once tests exist) or `accepted-risk` (option B) to unblock edits. Ask **once** per session;
 only re-ask if the target file changes.
 
+On **option D (hybrid)**, also record `"deferred"`: the HIGH band you are deliberately not
+netting/touching, as file paths or globs — e.g. `{"net":"green","decision":"D","deferred":
+["app/state/optimistic-cache.ts","app/state/**"]}`. This keeps the recorded state honest about
+what was left un-netted. The gate does **not** currently enforce this boundary (see Honest
+limits); the field is a truthful record and is logged at close-out (its count) so we can see how
+often hybrid refactors happen before deciding whether scope enforcement is worth building.
+
 ## Net-depth inventory (when net is green)
 
 When `net` is `green`, also record the net-depth inventory (see references/12-net-discipline.md):
@@ -53,3 +60,14 @@ catch). And the PreToolUse block depends on your Claude Code honoring a hook `de
 doesn't, arming and the A/B/C/D prompt still happen, but the edit isn't physically blocked. The
 test that the whole chain works: once armed, refuse to answer A/B/C/D, try to edit — you should
 be stopped.
+
+The gate only sees **file-editing tools** (Edit/Write/MultiEdit/NotebookEdit). It does **not**
+cover writes made through **Bash/shell** — a redirection (`>`, `>>`), `tee`, `sed -i`, `git
+apply`, `patch`, or a code-generating script can modify source while a refactor is armed and the
+gate will never see it. Detecting those reliably would mean parsing arbitrary shell, which is
+leaky by nature, so it is deliberately not attempted: the gate is a discipline aid, not a sandbox.
+While armed, keep source changes in the editing tools so the net-first gate actually applies.
+
+The `deferred` field (option D) is recorded and its count is logged, but the gate does **not**
+enforce it — an edit to a deferred HIGH-band file is not blocked. It documents intent and gathers
+evidence; it is not a scope guard.

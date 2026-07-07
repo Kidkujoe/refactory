@@ -223,6 +223,13 @@ function main() {
     );
   }
 
+  // v1.16.0 (#3): one close-out event per guarded session recording the decision letter and how
+  // many files were deferred (option D). This is the evidence base for whether hybrid/D refactors
+  // are common enough to ever justify building scope enforcement — measure before we build.
+  logEvent(rdir, { hook: "stop", action: "closeout", net,
+    decision: (g.decision ? String(g.decision).toUpperCase() : null),
+    deferred: Array.isArray(g.deferred) ? g.deferred.length : 0 });
+
   // v1.12.0: close-out is complete — regenerate the dashboard snapshot (fail-open; the
   // dashboard is a derived, git-ignored artifact, so refreshing it here means it's current
   // whenever a guarded session actually finishes, without anyone remembering to run it).

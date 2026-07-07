@@ -197,6 +197,22 @@ function main() {
           isDeny(gate("src/analysis.ipynb", "NotebookEdit")));
   }
 
+  // ---------- 7. Option-D instrumentation (v1.16.0 — #3) ----------
+  {
+    const d = freshDir();
+    write(d, ".refactory/guard.json", JSON.stringify({ net: "green", surface: "none",
+      decision: "d", deferred: ["app/state/cache.ts", "app/state/**"] }));
+    sleep(30);
+    write(d, ".refactory/learnings.md", "## Lessons\n- l.\n\n## Session log\n### 2026-03-01 — s\n- Surfaced: none\n");
+    runHook("refactory-ledger-check.js", { stop_hook_active: false }, d);
+    let ev = "";
+    try { ev = fs.readFileSync(path.join(d, ".refactory/events.log"), "utf8"); } catch {}
+    const closeout = ev.split("\n").map((l) => { try { return JSON.parse(l); } catch { return null; } })
+      .find((o) => o && o.action === "closeout");
+    check("closeout event records the decision letter (D)", !!(closeout && closeout.decision === "D"));
+    check("closeout event records the deferred-file count", !!(closeout && closeout.deferred === 2));
+  }
+
   // ---------- report ----------
   const pass = results.filter((r) => r.ok).length;
   console.log("refactory self-test — " + pass + "/" + results.length + " checks passed on this machine\n");
