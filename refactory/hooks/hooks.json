@@ -1,0 +1,39 @@
+{
+  "_comment": "The PostToolUse duplicate-block watcher (refactory-watch.js) was REMOVED from the active hook set in v1.9.0. Across three independent real-world sessions it fired constantly (on legitimate test setup, fixtures, and parallel handler structure, and on files mid-edit) and never once pointed at something actionable. High-frequency + zero-precision is the worst combination for an advisory channel: it trains the reader to ignore the channel, which is dangerous if a genuine signal ever appears. Per refactory's own principle that a noisy flag is worse than none, it is disabled by default. The script is kept in the repo as a reference, not wired in. A WORTHY replacement would be on-demand (not fire-on-every-edit), precise (real duplicated logic, not a mechanical 6-line text match), test-file-suppressed, and gated by an 'is this actually extractable / would extraction help readability?' check before surfacing.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/refactory-load-lessons.js\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/refactory-gate.js\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/refactory-ledger-check.js\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

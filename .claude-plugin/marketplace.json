@@ -1,0 +1,20 @@
+{
+  "name": "refactory-marketplace",
+  "owner": {
+    "name": "Kidkujoe"
+  },
+  "metadata": {
+    "description": "A marketplace hosting the refactory refactoring skill.",
+    "version": "1.15.0"
+  },
+  "plugins": [
+    {
+      "name": "refactory",
+      "source": "./refactory",
+      "description": "Disciplined, behavior-preserving code refactoring: 61 named refactorings, a code-smell trigger table, a test-after-every-step safety discipline, and a self-arming guarded mode with a cross-session learning loop. Flags smells proactively while you code.",
+      "version": "1.15.0",
+      "category": "code-quality",
+      "tags": ["refactoring", "code-smells", "testing", "maintainability"]
+    }
+  ]
+}
