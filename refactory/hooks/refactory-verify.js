@@ -171,6 +171,32 @@ function main() {
     }
   }
 
+  // ---------- 6. Gate exemption holes (v1.16.0 — #4a/#4b/#4c) ----------
+  {
+    const d = freshDir();
+    write(d, ".refactory/guard.json", JSON.stringify({ net: "pending", target: "x" }));
+    const isDeny = (r) => r.out && (r.out.hookSpecificOutput || {}).permissionDecision === "deny";
+    const gate = (file, tool) => runHook("refactory-gate.js",
+      { tool_name: tool || "Edit", tool_input: tool === "NotebookEdit"
+        ? { notebook_path: path.join(d, file) } : { file_path: path.join(d, file) }, cwd: d }, d);
+
+    // 4a — MDX is executable source now, so it is gated while pending
+    check("gate #4a: denies .mdx edit while pending (MDX is source, not prose)",
+          isDeny(gate("src/Page.mdx")));
+    check("gate #4a: still allows .md edit while pending (real prose)",
+          !isDeny(gate("NOTES.md")));
+    // 4b — 'playwright'/'e2e' only exempt as path segments, not substrings
+    check("gate #4b: denies playwright-app/src/main.ts (substring, not a test path)",
+          isDeny(gate("playwright-app/src/main.ts")));
+    check("gate #4b: allows tests/e2e/login.spec.ts (e2e as a real dir segment)",
+          !isDeny(gate("tests/e2e/login.spec.ts")));
+    check("gate #4b: allows e2e/flow.ts (leading e2e/ segment)",
+          !isDeny(gate("e2e/flow.ts")));
+    // 4c — NotebookEdit target (notebook_path) is gated like any source
+    check("gate #4c: denies NotebookEdit on a source .ipynb while pending",
+          isDeny(gate("src/analysis.ipynb", "NotebookEdit")));
+  }
+
   // ---------- report ----------
   const pass = results.filter((r) => r.ok).length;
   console.log("refactory self-test — " + pass + "/" + results.length + " checks passed on this machine\n");

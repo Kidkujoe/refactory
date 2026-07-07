@@ -44,11 +44,15 @@ function findGuard(startDir) {
   return null;
 }
 
-const TEST_RX = /(\.test\.|\.spec\.|__tests__\/|_test\.|\/test_|\.cy\.|e2e\/|playwright)/i;
+// v1.16.0 — "e2e" and "playwright" are anchored to PATH SEGMENTS, not substrings: the old
+// bare tokens exempted any path merely CONTAINING them (e.g. playwright-app/src/main.ts), which
+// is real source. Match /e2e/ or /playwright/ as a directory, playwright.config.*, or *.pw.*.
+const TEST_RX = /(\.test\.|\.spec\.|\.cy\.|\.pw\.|_test\.|[\\/]test_|(^|[\\/])__tests__[\\/]|(^|[\\/])e2e[\\/]|(^|[\\/])playwright[\\/]|(^|[\\/])playwright\.config\.)/i;
 // Clearly-non-source files are never "behavior we must preserve" — docs, notes, plans, prose.
 // The gate protects SOURCE; blocking these (e.g. NOTES.md at a single-file project's root) is
 // pure friction with no safety value. Allow them regardless of arm state.
-const NONSOURCE_RX = /\.(md|mdx|markdown|rst|txt|adoc)$/i;
+// v1.16.0 — "mdx" removed: MDX is executable JSX, not prose, so it is source the gate protects.
+const NONSOURCE_RX = /\.(md|markdown|rst|txt|adoc)$/i;
 const NONSOURCE_NAME_RX = /(^|[\\/])(NOTES|README|CHANGELOG|TODO|LICENSE|REFACTORING_PLAN)(\.[^.\\/]+)?$/i;
 
 function main() {
@@ -56,7 +60,9 @@ function main() {
   try { input = JSON.parse(readStdin() || "{}"); } catch { return allow(); }
 
   const ti = input.tool_input || {};
-  const filePath = typeof ti.file_path === "string" ? ti.file_path : "";
+  // NotebookEdit passes the target as notebook_path (a .ipynb is executable source, not prose).
+  const filePath = typeof ti.file_path === "string" ? ti.file_path
+                 : typeof ti.notebook_path === "string" ? ti.notebook_path : "";
   if (!filePath) return allow();
 
   // never gate edits to the .refactory dir itself (the gate is answered there)
