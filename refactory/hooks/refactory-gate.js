@@ -84,11 +84,15 @@ function main() {
 
   return deny(
     "refactory guarded refactor is active and the safety net is unresolved (net: " + net + "). " +
-    "Do NOT edit source yet. Present the user the structured net decision and wait for their pick: " +
+    "Do NOT edit source yet — resolve the net first. If this is a purely MECHANICAL job (rename, " +
+    "find-replace, codemod) or a LOW-risk target you can net cheaply (a few characterization " +
+    "assertions, no heavy mocks): do it yourself — run the exact tool or write the quick net — then " +
+    "set \"net\" to \"green\" in .refactory/guard.json (decision A); don't stop to ask for a near-free, " +
+    "safe net. Otherwise present the user the structured net decision and wait for their pick: " +
     "A) write characterization/smoke tests first, B) accept the risk and proceed, C) don't refactor, " +
-    "D) hybrid — refactor only the LOW/MEDIUM-risk band. Record the choice in .refactory/guard.json by " +
-    "setting \"net\" to \"green\" (option A, tests now exist) or \"accepted-risk\" (option B), plus a " +
-    "\"decision\" letter. Editing test files and .refactory/ is allowed in the meantime."
+    "D) hybrid — refactor only the LOW/MEDIUM-risk band. Record the choice by setting \"net\" to " +
+    "\"green\" (option A, tests now exist) or \"accepted-risk\" (option B), plus a \"decision\" letter. " +
+    "Editing test files and .refactory/ is allowed in the meantime."
   );
 }
 try { main(); } catch { allow(); }
