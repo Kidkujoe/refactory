@@ -38,7 +38,12 @@ parts, different jobs:
 - Extract the pure data-shaping logic out of live-data pages and test THAT; don't refactor the subscription/timer plumbing blind.
 - (keep this list short; prune aggressively)
 
-## Session log (newest first)
+## Session log
+<!-- Either ordering is accepted: append new entries at the bottom (oldest-first) or prepend
+them at the top (newest-first). The hooks key off each entry's `### YYYY-MM-DD` date, not its
+position, so auto-archive always removes the oldest by date and the Stop hook always inspects
+the newest by date. Keep the date in every `###` header — an undated entry is never archived
+(kept, fail-safe) and won't be recognised as "this session's" close-out. -->
 ### 2026-05-29 — tracking page (PR #NNN)
 - Net: NONE — user declined per gate (option b), manual smoke owed before merge
 - Behavior preserved: UNVERIFIED
@@ -58,7 +63,7 @@ parts, different jobs:
 3. **Distill** (the judgment half is yours; the bookkeeping half is now mechanical) — promote
    recurring candidates into terse imperative lines in `## Lessons`; prune one-offs and
    stale/contradicted notes. The SessionStart hook handles the data-movement part for you:
-   past 15 session-log entries it auto-archives the oldest to `.refactory/archive/`, and it
+   past 15 session-log entries it auto-archives the oldest (by `###` date) to `.refactory/archive/`, and it
    warns when Lessons drift past the terseness budget (~12 bullets, ≤2 lines each). What it
    cannot do is the judgment — *which* patterns deserve to become Lessons. That part is the
    five-minute pass the housekeeping nudge keeps asking for.
@@ -219,7 +224,7 @@ manufactures false confidence, the exact thing the skill exists to prevent. Hold
 - **Prune superseded entries.** A "paused at gate" entry followed by a "COMPLETE" entry for the
   same work is redundant — fold or drop the paused one. Two entries for one session is noise.
 - **Compaction is now mechanical (v1.11.0).** The session log is raw material; past 15 entries
-  the SessionStart hook auto-moves the oldest to `.refactory/archive/learnings-archive.md` and
+  the SessionStart hook auto-moves the oldest (by `###` date) to `.refactory/archive/learnings-archive.md` and
   keeps the recent 15 live, so the file stays skimmable *without anyone deciding to*. Archiving
   is pure data movement — no judgment, no behavior change — which is exactly why it's safe to
   automate. (The honest history: the advisory nudge fired for weeks over a 42-entry log and

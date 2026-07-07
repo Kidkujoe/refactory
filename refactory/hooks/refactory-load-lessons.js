@@ -65,7 +65,19 @@ function extractLessons(md) {
   return meaningful ? body : "";
 }
 
-/* v1.11.0 — mechanical archive of old session-log entries. Returns count archived (0 if none). */
+/* Parse the YYYY-MM-DD date out of a "### " entry header; null if the header carries none. */
+function entryDate(headerLine) {
+  const m = headerLine.match(/\b(\d{4}-\d{2}-\d{2})\b/);
+  return m ? m[1] : null;
+}
+
+/* v1.11.0 — mechanical archive of old session-log entries. Returns count archived (0 if none).
+ * v1.16.0 — ORDER-AGNOSTIC: the documented format is "newest first" but nothing forces the
+ * agent to prepend vs append, so this no longer assumes file order. It keys off each entry's
+ * ### YYYY-MM-DD date and archives the OLDEST by date, keeping the KEEP_RECENT newest live —
+ * correct whether entries are appended (oldest-first) or prepended (newest-first). Fail-safe:
+ * an entry whose header has no parseable date is NEVER archived (we don't move what we can't
+ * order), so a malformed/undated header degrades to "kept", never to "wrong entry moved". */
 function autoArchive(logPath, md) {
   // Locate the "## Session log" section; entries are "### " blocks inside it.
   const lines = md.split(/\r?\n/);
@@ -81,18 +93,33 @@ function autoArchive(logPath, md) {
     if (/^##\s+/.test(lines[i])) { secEnd = i; break; }
   }
 
-  // Collect entry boundaries (### headings) within the section.
-  const entryStarts = [];
+  // Collect entry boundaries (### headings) within the section, with each entry's parsed date.
+  const starts = [];
   for (let i = secStart + 1; i < secEnd; i++) {
-    if (/^###\s+/.test(lines[i])) entryStarts.push(i);
+    if (/^###\s+/.test(lines[i])) starts.push(i);
   }
-  if (entryStarts.length <= KEEP_RECENT) return 0;
+  if (starts.length <= KEEP_RECENT) return 0;
+  const entries = starts.map((s, idx) => ({
+    start: s,
+    end: idx + 1 < starts.length ? starts[idx + 1] : secEnd, // exclusive
+    date: entryDate(lines[s]),
+  }));
 
-  // Entries are appended chronologically, so the OLDEST are first. Archive all but the last KEEP_RECENT.
-  const cutCount = entryStarts.length - KEEP_RECENT;
-  const cutFrom = entryStarts[0];
-  const cutTo = entryStarts[cutCount]; // exclusive — first kept entry
-  const archived = lines.slice(cutFrom, cutTo).join("\n").trimEnd();
+  // Rank oldest-first BY DATE. Undated entries sort last (sentinel "9999-…") so they're never
+  // selected for archiving; ties break on file order for stability.
+  const cutCount = entries.length - KEEP_RECENT;
+  const ranked = entries
+    .map((e, i) => ({ e, i }))
+    .sort((a, b) => {
+      const da = a.e.date || "9999-99-99", db = b.e.date || "9999-99-99";
+      return da < db ? -1 : da > db ? 1 : a.i - b.i;
+    });
+  const toArchive = ranked.slice(0, cutCount).map((r) => r.e).filter((e) => e.date);
+  if (!toArchive.length) return 0; // nothing datable to archive — keep everything
+
+  // Write the archive in chronological order (readable history), independent of file order.
+  toArchive.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : a.start - b.start));
+  const archived = toArchive.map((e) => lines.slice(e.start, e.end).join("\n").trimEnd()).join("\n");
   if (!archived) return 0;
 
   // 1) Append to the archive FIRST (move-not-delete: data exists in two places before one).
@@ -103,18 +130,19 @@ function autoArchive(logPath, md) {
     fs.mkdirSync(dir, { recursive: true });
     const header = fs.existsSync(archivePath) ? "" : "# refactory learnings — archived session-log entries\n\n";
     fs.appendFileSync(archivePath,
-      header + "<!-- auto-archived " + stamp + " (" + cutCount + " entries) -->\n" + archived + "\n\n");
+      header + "<!-- auto-archived " + stamp + " (" + toArchive.length + " entries, oldest by date) -->\n" + archived + "\n\n");
     // verify the write landed before touching the source
     const check = fs.readFileSync(archivePath, "utf8");
     if (!check.includes(archived.slice(0, 200))) return 0;
   } catch { return 0; } // archive failed — leave learnings.md untouched
 
-  // 2) Only now rewrite learnings.md without the archived block.
+  // 2) Only now rewrite learnings.md without the archived entries (they may be non-contiguous).
   try {
-    const kept = lines.slice(0, cutFrom).concat(lines.slice(cutTo)).join("\n");
-    fs.writeFileSync(logPath, kept);
+    const drop = new Set();
+    for (const e of toArchive) for (let i = e.start; i < e.end; i++) drop.add(i);
+    fs.writeFileSync(logPath, lines.filter((_, i) => !drop.has(i)).join("\n"));
   } catch { return 0; } // rewrite failed — worst case is duplication, never loss
-  return cutCount;
+  return toArchive.length;
 }
 
 /* v1.11.0 — terseness budget on the Lessons section. Returns a warning string or "". */

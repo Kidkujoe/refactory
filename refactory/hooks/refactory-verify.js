@@ -124,6 +124,53 @@ function main() {
     check("dashboard: generates from project data", ok && fs.existsSync(path.join(d, ".refactory/dashboard.html")));
   }
 
+  // ---------- 5. Session-log ordering (v1.16.0 — order-agnostic archive + selection) ----------
+  {
+    const mkEntry = (dt) => "### " + dt + " — s\n- x\n";
+    const mkLog = (entries) => "# refactory learnings\n\n## Lessons\n- l.\n\n## Session log\n" + entries.join("\n") + "\n";
+    const dates = [];
+    for (let n = 1; n <= 17; n++) dates.push("2026-01-" + String(n).padStart(2, "0"));
+    const oldest2 = [dates[0], dates[1]];      // must be archived
+    const newest = dates[dates.length - 1];    // must stay live
+    const readLive = (d) => fs.readFileSync(path.join(d, ".refactory/learnings.md"), "utf8");
+    const readArch = (d) => { const p = path.join(d, ".refactory/archive/learnings-archive.md"); return fs.existsSync(p) ? fs.readFileSync(p, "utf8") : ""; };
+
+    // (a) oldest-first log (append order): oldest entries at the top
+    {
+      const d = freshDir();
+      write(d, ".refactory/learnings.md", mkLog(dates.map(mkEntry)));
+      runHook("refactory-load-lessons.js", {}, d);
+      const live = readLive(d), arch = readArch(d);
+      check("archive (oldest-first log): moves the 2 oldest by date",
+            oldest2.every((dt) => arch.includes(dt) && !live.includes(dt)));
+      check("archive (oldest-first log): keeps the newest live", live.includes(newest));
+    }
+    // (b) newest-first log (prepend order): oldest entries at the BOTTOM — the old file-order
+    //     assumption would have archived the newest here; date-keying must still pick the oldest.
+    {
+      const d = freshDir();
+      write(d, ".refactory/learnings.md", mkLog(dates.slice().reverse().map(mkEntry)));
+      runHook("refactory-load-lessons.js", {}, d);
+      const live = readLive(d), arch = readArch(d);
+      check("archive (newest-first log): still moves the 2 oldest by date, not by position",
+            oldest2.every((dt) => arch.includes(dt) && !live.includes(dt)));
+      check("archive (newest-first log): never archives the newest entry", live.includes(newest));
+    }
+    // (c) ledger-check selects "this session's" entry as the newest by date, not the last in file
+    {
+      const d = freshDir();
+      write(d, ".refactory/guard.json", JSON.stringify({ net: "green", surface: "none" }));
+      sleep(30);
+      write(d, ".refactory/learnings.md",
+        "## Lessons\n- l.\n\n## Session log\n" +
+        "### 2026-02-02 — s\n- Surfaced: none\n\n" +
+        "### 2026-02-01 — s\n- Surfaced: a real bug\n");   // older entry, last-in-file
+      const r = runHook("refactory-ledger-check.js", { stop_hook_active: false }, d);
+      check("stop (newest-first log): reads the NEWEST entry (none), ignores the older last-in-file bug",
+            !r.out || !r.out.decision);
+    }
+  }
+
   // ---------- report ----------
   const pass = results.filter((r) => r.ok).length;
   console.log("refactory self-test — " + pass + "/" + results.length + " checks passed on this machine\n");

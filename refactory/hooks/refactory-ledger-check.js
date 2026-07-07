@@ -39,6 +39,27 @@ function findRefactoryDir(startDir) {
 
 function asArray(x) { return Array.isArray(x) ? x.map((s) => String(s).trim().toLowerCase()).filter(Boolean) : null; }
 
+/* v1.16.0 — ORDER-AGNOSTIC "this session's entry". The session log may be written newest-first
+ * (prepend) or oldest-first (append); the previous lastIndexOf("\n### ") assumed append and so
+ * picked the OLDEST entry under a newest-first log. Select the entry with the newest ### date
+ * instead. Fail-safe: if no entry carries a parseable YYYY-MM-DD, fall back to the last entry in
+ * file order (the old behavior), so undated logs behave exactly as before. */
+function currentEntry(md) {
+  const lines = md.split(/\r?\n/);
+  const idxs = [];
+  for (let i = 0; i < lines.length; i++) if (/^###\s+/.test(lines[i])) idxs.push(i);
+  if (!idxs.length) return md;
+  let bestIdx = null, bestDate = null;
+  for (const i of idxs) {
+    const m = lines[i].match(/\b(\d{4}-\d{2}-\d{2})\b/);
+    if (m && (bestDate === null || m[1] >= bestDate)) { bestDate = m[1]; bestIdx = i; }
+  }
+  if (bestIdx === null) bestIdx = idxs[idxs.length - 1]; // no dates -> last in file order
+  let end = lines.length;
+  for (let i = bestIdx + 1; i < lines.length; i++) if (/^###\s+/.test(lines[i]) || /^##\s+/.test(lines[i])) { end = i; break; }
+  return lines.slice(bestIdx, end).join("\n");
+}
+
 /* v1.13.0 — enforcement observability: append one JSON line per block to .refactory/events.log
  * (local telemetry, git-ignored). The dashboard reads it, so the friction is measured, not
  * guessed — gates that never earn their keep can be tuned or cut from evidence. Fail-open. */
@@ -118,8 +139,7 @@ function main() {
     // whose bugs were already logged in their own sessions (latent bug fixed in v1.12.0).
     try {
       const md = fs.readFileSync(log, "utf8");
-      const lastIdx = md.lastIndexOf("\n### ");
-      const lastEntry = lastIdx === -1 ? md : md.slice(lastIdx);
+      const lastEntry = currentEntry(md); // this session's entry = newest by date (order-agnostic)
       const m = lastEntry.match(/surfaced[^:\n]*:\s*(.+)/i);
       if (m) {
         const v = m[1].trim().toLowerCase();
