@@ -114,6 +114,7 @@ is kept in the repo as a reference only. If you don't want any hooks, delete `re
 └── refactory/                    # the plugin
     ├── .claude-plugin/
     │   └── plugin.json           # plugin manifest
+    ├── SUCCESS_CRITERIA.md       # the discipline rubric (what a good session looks like)
     ├── commands/
     │   └── refactor.md           # the /refactor command
     ├── hooks/
