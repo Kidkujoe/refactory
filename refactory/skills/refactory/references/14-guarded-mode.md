@@ -34,7 +34,9 @@ persisted value), and `"asserted"` = what the net actually checks — or `"surfa
 pure behavior-preserving move. e.g. `{"net":"green","decision":"A","surface":["bookingIds",
 "activeSections","sectionToggles"],"asserted":["bookingIds","activeSections","sectionToggles"]}`.
 
-At end of turn the Stop hook blocks finishing until the close-out is complete: (1) the ledger is
+At end of turn, if the close-out is incomplete, the Stop hook nudges **once** with a combined
+checklist and then allows the retry (loop-safe via `stop_hook_active` — it blocks a single time,
+never traps the agent in a loop). The checklist covers: (1) the ledger is
 persisted to `learnings.md`; (2) any surfaced bugs are logged to `backlog.md`; (3) when `net` is
 `green`, the inventory exists and `asserted` covers the whole `surface` (it checks coverage of
 what you *listed* — it can't verify the list is *complete*, so enumerate adversarially); and

@@ -413,7 +413,8 @@ was left un-netted (the gate does not yet enforce this boundary; the field makes
 visible and is logged at close-out as evidence for whether D-style hybrids are common enough to
 justify enforcing scope later). Ask **once** per session; only re-ask if the target file changes.
 When `net` is `green`, also record the net-depth inventory (`surface`/`asserted`); at end of turn
-the Stop hook blocks finishing until the ledger + backlog + inventory close-out is complete —
+the Stop hook nudges once with a combined checklist if the ledger + backlog + inventory close-out
+is incomplete (loop-safe — it blocks a single time, never traps you) —
 see `references/14-guarded-mode.md` for both.
 
 **Risk taxonomy** (use it to band smells in the audit, and to scope option D):

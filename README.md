@@ -89,7 +89,8 @@ When you ask for a refactor, the skill **arms a guard** (`.refactory/guard.json`
 net is unresolved, a `PreToolUse` hook blocks edits to source files (tests, docs, and
 `.refactory/` stay editable) until you've decided how to net the change — write a
 characterization test, accept the risk, defer, or refactor only the low-risk slice. A `Stop`
-hook then refuses to end the turn until the discipline ledger is written. Nothing about this
+hook then nudges once with a combined checklist of anything still missing (ledger, surfaced
+bugs, net-depth) — a single loop-safe block, never a trap. Nothing about this
 runs unless a refactor is armed; you can always override with `/refactor on|off|status`.
 
 ### Refactoring a whole project
@@ -110,7 +111,7 @@ surfaced-bug backlog, and starts the separate fix phase. See `refactory/commands
 The plugin wires three hooks (`refactory/hooks/hooks.json`):
 - **SessionStart** → `refactory-load-lessons.js` injects the current project's distilled lessons.
 - **PreToolUse** (Edit/Write) → `refactory-gate.js` enforces the net-first gate while armed.
-- **Stop** → `refactory-ledger-check.js` blocks close-out until the ledger is recorded.
+- **Stop** → `refactory-ledger-check.js` nudges once with a combined close-out checklist (ledger, surfaced bugs, net-depth) if anything's missing; loop-safe, so it never blocks a second time.
 
 The old fire-on-every-edit duplicate-block watcher (`refactory-watch.js`) is **disabled by
 default** — it was noisy and low-precision, and a noisy flag is worse than none. The script
