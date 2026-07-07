@@ -1,6 +1,6 @@
 ---
-description: Control refactory's guarded mode, fix phase, and lesson lifecycle (on | off | status | backlog | fix | review)
-argument-hint: "on | off | status | backlog | fix | review"
+description: Control refactory's guarded mode, fix phase, and lesson lifecycle (on | off | status | backlog | fix | promote | review | demote | retire | dashboard | verify)
+argument-hint: "on | off | status | backlog | fix | promote | review | demote | retire | dashboard | verify"
 ---
 
 The user invoked `/refactor $ARGUMENTS`. Act on the argument:
