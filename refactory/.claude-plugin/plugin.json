@@ -1,7 +1,7 @@
 {
   "name": "refactory",
   "description": "Disciplined, behavior-preserving code refactoring. A catalog of 61 named refactorings with step-by-step mechanics, a code-smell trigger table, and a safety discipline (test after every small step, revert on red, never mix refactoring with feature changes). Ships a self-arming guarded mode, a surfaced-bug fix phase, and a cross-session learning loop. Proactively flags smells while you read or edit code.",
-  "version": "1.15.0",
+  "version": "1.16.0",
   "author": {
     "name": "Kidkujoe"
   },
