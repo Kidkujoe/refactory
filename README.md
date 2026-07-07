@@ -110,12 +110,21 @@ surfaced-bug backlog, and starts the separate fix phase. See `refactory/commands
 
 The plugin wires three hooks (`refactory/hooks/hooks.json`):
 - **SessionStart** → `refactory-load-lessons.js` injects the current project's distilled lessons.
-- **PreToolUse** (Edit/Write) → `refactory-gate.js` enforces the net-first gate while armed.
+- **PreToolUse** (Edit/Write/MultiEdit/NotebookEdit) → `refactory-gate.js` enforces the net-first gate while armed.
 - **Stop** → `refactory-ledger-check.js` nudges once with a combined close-out checklist (ledger, surfaced bugs, net-depth) if anything's missing; loop-safe, so it never blocks a second time.
 
 The old fire-on-every-edit duplicate-block watcher (`refactory-watch.js`) is **disabled by
 default** — it was noisy and low-precision, and a noisy flag is worse than none. The script
 is kept in the repo as a reference only. If you don't want any hooks, delete `refactory/hooks/`.
+
+### Trust boundary
+
+`.refactory/learnings.md` is **injected into the agent's context at the start of every session**
+(the SessionStart hook). Treat edits to it like edits to `CLAUDE.md`: anything written there
+becomes standing instruction the agent reads before it works, so review changes to it — and be
+wary of accepting a `learnings.md` from an untrusted source. To keep it both safe and effective,
+the injected `## Lessons` section is capped (~2000 chars); if it overflows you'll see a truncation
+notice pointing at `/refactor review` to distill it back down.
 
 ## Repository layout
 

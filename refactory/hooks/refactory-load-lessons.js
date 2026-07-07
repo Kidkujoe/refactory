@@ -33,6 +33,18 @@ const fs = require("fs");
 const path = require("path");
 
 const KEEP_RECENT = 15;
+const LESSONS_CAP = 2000; // v1.16.0 — max chars of Lessons injected into context (trust-surface + focus)
+
+/* v1.16.0 — cap the injected Lessons section. It is prepended to the agent's context every
+ * session, so an unbounded list both costs tokens and (per the plugin's own rule) stops working
+ * once it's long enough to skim past. Truncate at a line boundary and point at /refactor review. */
+function capLessons(lessons) {
+  if (lessons.length <= LESSONS_CAP) return lessons;
+  const cut = lessons.lastIndexOf("\n", LESSONS_CAP);
+  const head = lessons.slice(0, cut > 0 ? cut : LESSONS_CAP).trimEnd();
+  return head + "\n\n(…Lessons truncated at ~" + LESSONS_CAP +
+    " chars — too long to stay sharp; run `/refactor review` to distill.)";
+}
 
 function readStdin() { try { return fs.readFileSync(0, "utf8"); } catch { return ""; } }
 
@@ -313,7 +325,7 @@ function main() {
   const note =
     "refactory has accumulated lessons for this project (from past refactoring sessions). " +
     "Treat these as standing guidance for any refactoring this session, alongside the skill's " +
-    "discipline:\n\n" + lessons +
+    "discipline:\n\n" + capLessons(lessons) +
     (nudges.length ? "\n\n(housekeeping: " + nudges.join(". ") + ".)" : "");
 
   process.stdout.write(JSON.stringify({

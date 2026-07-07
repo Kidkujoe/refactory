@@ -213,6 +213,18 @@ function main() {
     check("closeout event records the deferred-file count", !!(closeout && closeout.deferred === 2));
   }
 
+  // ---------- 8. Injected-Lessons cap (v1.16.0 — #7f) ----------
+  {
+    const d = freshDir();
+    const bigLessons = Array.from({ length: 120 }, (_, i) => "- lesson number " + i + " with enough text to add up over many bullets").join("\n");
+    write(d, ".refactory/learnings.md", "# x\n\n## Lessons\n" + bigLessons + "\n\n## Session log\n### 2026-01-01 — s\n- ok\n");
+    const r = runHook("refactory-load-lessons.js", {}, d);
+    const ctx = r.out && r.out.hookSpecificOutput && r.out.hookSpecificOutput.additionalContext || "";
+    // the Lessons portion is capped; the note has a fixed preamble + housekeeping, so allow slack
+    check("lessons cap: injected context is bounded when Lessons overflow", ctx.length < 3000);
+    check("lessons cap: emits the truncation + /refactor review notice", /truncated at ~2000/.test(ctx) && /refactor review/.test(ctx));
+  }
+
   // ---------- report ----------
   const pass = results.filter((r) => r.ok).length;
   console.log("refactory self-test — " + pass + "/" + results.length + " checks passed on this machine\n");
